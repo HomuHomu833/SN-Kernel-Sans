@@ -12,9 +12,18 @@ class CommandError(Exception):
 def run_command(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
+    stdout = stdout.decode("utf-8")
+    stderr = stderr.decode("utf-8")
+    stdout_log = f"{process.pid}_stdout.log"
+    stderr_log = f"{process.pid}_stderr.log"
+    with open(stdout_log, "w") as f:
+        f.write(stdout)
+    with open(stderr_log, "w") as f:
+        f.write(stderr)
+    print(f"Output log files: {stdout_log}, {stderr_log}")
     if process.returncode != 0:
         raise CommandError(f"Command failed: {command}. Exit code: {process.returncode}")
-    return stdout.decode("utf-8"), stderr.decode("utf-8")
+    return stdout, stderr
 
 def file_exists(filepath):
     if not os.path.exists(filepath):
@@ -61,6 +70,8 @@ def main():
     parser.add_argument('--target', type=str, required=True, help="Target device (a51/m21/...)")
     parser.add_argument('--allow-dirty', action='store_true', help="Allow dirty build")
     parser.add_argument('--oneui', action='store_true', help="OneUI build")
+    parser.add_argument('--aosp', action='store_true', help="AOSP build (default)")
+    parser.add_argument('--ksu', action='store_true', help="Enable KernelSU")
     parser.add_argument('--permissive', action='store_true', help="Use SELinux permissive mode")
     args = parser.parse_args()
     
@@ -94,8 +105,8 @@ def main():
         'Build Type': build_type,
         'SELinux': selinux_state,
         'Device': args.target,
-        'TARGET_USES_LLVM': True,
-        'TOOLCHAIN_VERSION': ClangCompiler.get_version(),
+        'Includes KernelSU': args.ksu,
+        'Toolchain Version': ClangCompiler.get_version(),
     })
     
     toolchain_path = os.path.join(os.getcwd(), 'toolchain', 'bin')
@@ -112,6 +123,8 @@ def main():
     
     if args.oneui:
         make_defconfig += ['oneui.config']
+    if args.ksu:
+        make_defconfig += ['ksu.config']
     if args.permissive:
         make_defconfig += ['permissive.config']
 
@@ -127,8 +140,8 @@ def main():
         kernel_version_info = extract_match(r'"([^"]+)"', f.read())
     
     shutil.copyfile('out/arch/arm64/boot/Image', 'AnyKernel3/Image')
-    zip_filename = 'SN_{}_{}_{}_{}.zip'.format(
-        kernel_version, args.target, 'OneUI' if args.oneui else 'AOSP', datetime.today().strftime('%Y-%m-%d'))
+    zip_filename = 'SN_{}_{}_{}_{}{}.zip'.format(
+        kernel_version, args.target, 'OneUI' if args.oneui else 'AOSP', datetime.today().strftime('%Y-%m-%d'), '-KSU' if args.ksu else '')
     os.chdir('AnyKernel3/')
     create_zip(zip_filename, [
         'Image', 
@@ -155,4 +168,3 @@ def main():
     
 if __name__ == '__main__':
     main()
-
