@@ -31,6 +31,8 @@ jobs:
           
       - name: Build
         run: |
+          mkdir -p KernelSU/kernel/include
+          mv include/linux/ksu_hook.h KernelSU/kernel/include
           BUILD_TYPE_LOWER=$(echo "${{matrix.build_type}}" | tr '[:upper:]' '[:lower:]')
           python build_kernel.py --$BUILD_TYPE_LOWER --target=${{matrix.device}} --ksu
           mv SN_*.zip "SN_${{matrix.device}}_${{matrix.build_type}}-KSU.zip"
