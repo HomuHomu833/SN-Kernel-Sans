@@ -41,8 +41,8 @@ jobs:
         if: success()
         uses: actions/upload-artifact@main
         with:
-          name: SN_${{matrix.device}}_${{matrix.build_type}}
-          path: "SN_${{matrix.device}}_${{matrix.build_type}}.zip"
+          name: SN_${{matrix.device}}_${{matrix.build_type}}-KSU
+          path: "SN_${{matrix.device}}_${{matrix.build_type}}-KSU.zip"
           if-no-files-found: error
 
       - name: Upload Logs
