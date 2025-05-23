@@ -4,4 +4,4 @@
 [submodule "KernelSU"]
 	path = KernelSU
 	url = https://github.com/backslashxx/KernelSU
-	branch = 12083+sus155
+	branch = 12095-sus155
